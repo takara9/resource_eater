@@ -3,9 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define BLOCKSIZ 8192
-#define NUMOFBLK 1048576
-#define LIMIT 100
+#define BLOCKSIZ 1048576*5  // ブロックサイズ 5MBi
+#define NUMOFBLK 100      // デフォルトは100MBi
 
 typedef struct data_chain {
   void *ptr_data;
@@ -15,14 +14,13 @@ typedef struct data_chain {
 
 int main( int argc, char *argv[] )
 {
-  int i,j,limit,wait;
-  float sz;
+  int i,limit,wait;
 
   data_chain_t *top = malloc(sizeof(data_chain_t));
-  data_chain_t *cur, *prv;
+  data_chain_t *cur;
 
   if (argc < 3) {
-    limit = LIMIT;
+    limit = NUMOFBLK;
     wait = 1;
   } else {
     limit = atoi(argv[1]);
@@ -34,12 +32,7 @@ int main( int argc, char *argv[] )
   cur = top;
 
   // メモリ取得ループ
-  for(j=0,i=1; i < NUMOFBLK; i++) {
-
-    if ((i % 1000) == 0) {
-      printf("%6d  %5.1f MB\n",i, sz);
-      sleep(wait);
-    }
+  for(i=1; i < (limit+1); i++) {
 
     cur->ptr_next = malloc(sizeof(data_chain_t));
     if (cur->ptr_next == NULL) {
@@ -47,35 +40,20 @@ int main( int argc, char *argv[] )
       exit(1);
     }
 
-    j++;
     cur->ptr_data = malloc(BLOCKSIZ);
     if (cur->ptr_data == NULL) {
       printf("Malloc Error at ptr_data");
       exit(1);
     }
     memset(cur->ptr_data, 0, BLOCKSIZ);
-    sz = (float)j*(BLOCKSIZ+sizeof(data_chain_t))/1024/1024;
-
-    if (limit < sz) {
-      break;
-    }
-
     cur = cur->ptr_next;
-   }
 
+    printf("%6d  %5.1f MB\n",i, (float)i*BLOCKSIZ/BLOCKSIZ);
+    sleep(wait);
+  }
 
-  // メモリ解放ループ
-  for(i=1,cur=top; cur != NULL;i++) {
-    if ((i % 1000) == 0) {
-      printf("%6d  %5.1f MB\n",i, (float)j*(BLOCKSIZ+sizeof(data_chain_t))/1024/1024);
-      sleep(wait);
-    }
-
-    free(cur->ptr_data);
-    prv = cur;
-    cur = cur->ptr_next;
-    free(prv);
-    j--;
+  for(;;) {
+    sleep(60);
   }
 
   return(0);
