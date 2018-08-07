@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
-ADD ./src /apl/src
-RUN cd src; make
-ADD ./bin /apl/bin
-CMD ["/apl/bin/memory_eater", "300","1"]
+RUN apt-get update && apt-get install -y gcc make
+RUN mkdir /apl/bin
+RUN cd /apl/src; make
+CMD ["tail", "-f","/dev/null"]
 
